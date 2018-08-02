@@ -1,0 +1,49 @@
+inux/Windows :  
+
+step 1: login as sysdba
+
+Linux -
+
+[oracle@testdb ~]$ sqlplus / as sysdba
+
+Windows -
+
+C:\Users\getquery> sqlplus / as sysdba
+
+SQL*Plus: Release 11.2.0.1.0 Production on Thu May 4 10:10:50 2017
+
+Copyright (c) 1982, 2009, Oracle.  All rights reserved.
+
+Connected to:
+
+Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit Production
+
+With the Partitioning, OLAP, Data Mining and Real Application Testing options
+
+step 2: change col format
+
+SQL> col TABLESPACE_NAME format a30
+
+step 3: set number of lines
+
+SQL> set lines 900
+
+step 4: run the bottom query
+
+SQL> select avail_tname "TABLESPACE_NAME",sum(round(avail_space,2)) "ALLOCATED (MB)",((round(avail_space,2)-round(free_space,2))) "USED (MB)",(round(free_space,2)) "FREE (MB)",(round(((round(avail_space,2)-round(free_space,2))/avail_space)*100,2)) "USED (%)",(round((free_space/avail_space)*100,2)) "FREE (%)" from (select tablespace_name avail_tname,sum(bytes)/1024/1024 avail_space from dba_data_files group by tablespace_name) a,(select tablespace_name free_tname,sum(bytes)/1024/1024 free_space from dba_free_space group by tablespace_name) b where a.avail_tname=b.free_tname group by avail_tname,avail_space,free_space UNION all select avail_tname "TABLESPACE  NAME",sum(round(avail_space,2)) "ALLOCATED (MB)",((round(avail_space,2)-round(free_space,2))) "USED (MB)",(round(free_space,2)) "FREE (MB)",(round(((round(avail_space,2)-round(free_space,2))/avail_space)*100,2)) "USED (%)",(round((free_space/avail_space)*100,2)) "FREE (%)" from (select tablespace_name avail_tname,sum(bytes)/1024/1024 avail_space from dba_temp_files group by tablespace_name) a,(select tablespace_name free_tname,sum(bytes_free)/1024/1024 free_space from v$temp_space_header group by tablespace_name) b where a.avail_tname=b.free_tname group by avail_tname,avail_space,free_space order by 5 desc;
+
+step 5: check output like
+
+TABLESPACE_NAME                ALLOCATED (MB)  USED (MB)  FREE (MB)   USED (%)   FREE (%)
+
+------------------------------ -------------- ---------- ---------- ---------- ----------
+
+TEMP                                    30248      30248          0        100          0
+
+SYSTEM                                   3020    2998.75      21.25       99.3         .7
+
+YOURTABLESPACE_NAME                      8192    7999.94     192.06      97.66       2.34
+
+YOURTABLESPACE_NAME2                  16839.5   16037.62     801.88      95.24       4.76
+
+4 rows selected.
